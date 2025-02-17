@@ -38,6 +38,13 @@ if __name__ == "__main__":
 
 
     remaining_allowance = calculate_remaining_allowance(latest_year, annual_allowances, contributions)
-    print(f"Remaining Allowances: {remaining_allowance}")
+    # Format the entire list (if you want to display all values)
+    print(f"Remaining Allowances: {[f'£{x:.2f}' for x in remaining_allowance]}")
+
+    # Format the last 4 elements of the list
+    print(f"Relevant allowances for latest tax year: {[f'£{x:.2f}' for x in remaining_allowance[-4:]]}")
+
+    # Sum the last 4 elements and format the result
+    print(f"Total allowances you can use for this tax year: £{sum(remaining_allowance[-4:]):.2f}")
 
 
