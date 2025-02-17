@@ -27,5 +27,3 @@ def test_simple_annual_allowance(annual_allowances, contributions, expected_rema
 
     remaining_allowance = calculate_remaining_allowance(latest_year, annual_allowances, contributions)
     assert remaining_allowance == expected_remaining_allowance
-
-    latest_year = 2025
