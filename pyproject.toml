@@ -1,6 +1,6 @@
 [project]
 name = "calculateremainingannualpensionallowance"
-version = "0.1.0"
+version = "1.0"
 description = ""
 authors = [
     {name = "John Pulford",email = "johnpulford@gmail.com"}
