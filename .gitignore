@@ -1,0 +1,36 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Poetry virtual environment
+.poetry/
+
+# Virtual environments
+venv/
+.env/
+
+# PyCharm specific
+.idea/
+*.iml
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Logs and databases
+*.log
+db.sqlite3
+
+# OS-specific files
+.DS_Store
+Thumbs.db
