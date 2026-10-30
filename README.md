@@ -57,11 +57,6 @@ Available to pay in during 2027/28: £165,000
 * 2027/28: not yet published by HMRC, assumed unchanged from the latest published year.
 ```
 
-### Things it doesn't check
-- You can only carry forward from a year in which you were a member of a registered pension scheme.
-- Once you've flexibly accessed a pension, the money purchase annual allowance (£10,000) limits defined contribution savings and you can't use carry forward for them. Set `allowance = 10000` for those years as a rough stand-in.
-- Tax relief on your own contributions is also limited to 100% of your relevant UK earnings in the year, whatever the allowance says.
-
 ## Library use
 ```python
 from calculateremainingannualpensionallowance import forecast
