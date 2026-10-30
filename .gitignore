@@ -34,3 +34,14 @@ db.sqlite3
 # OS-specific files
 .DS_Store
 Thumbs.db
+
+# Nix
+result
+result-*
+.direnv/
+
+# pytest
+.pytest_cache/
+
+# Personal contribution figures: keep them out of this public repo.
+contributions.toml

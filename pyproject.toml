@@ -1,21 +1,24 @@
 [project]
 name = "calculateremainingannualpensionallowance"
-version = "1.0"
-description = ""
+version = "2.0"
+description = "Forecast the UK pension annual allowance available in a tax year, with carry forward"
 authors = [
     {name = "John Pulford",email = "johnpulford@gmail.com"}
 ]
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
 ]
+
+[project.scripts]
+pension-allowance = "calculateremainingannualpensionallowance.cli:main"
 
 [tool.poetry]
 packages = [{include = "calculateremainingannualpensionallowance", from = "src"}]
 
-
-[tool.poetry.group.test.dependencies]
-pytest = "^8.3.4"
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

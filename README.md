@@ -1,55 +1,85 @@
 # Remaining Pension Annual Allowance Calculator
 
 ## Overview
-This script calculates the remaining pension annual allowance in the UK by considering annual allowances, contributions, and the HMRC's three-year carry-forward rule. It helps determine how much of the pension allowance remains available for future contributions.
+Forecasts how much you can pay into UK pensions in a tax year without an annual allowance charge. It uses the year's own annual allowance plus unused allowance from the previous three tax years (HMRC's carry forward rule).
+
+Tax years are named by the year they start: `2027` is 2027/28 (6 April 2027 to 5 April 2028).
 
 ## Features
-- Takes into account annual allowances and contributions for multiple years.
-- Automatically applies HMRC's carry-forward rule (up to three previous tax years) if contributions exceed the current year's allowance.
-- Prints the remaining allowances after all contributions are processed.
+- Built-in annual allowances from 2016/17 to 2027/28, from GOV.UK's [pension schemes rates](https://www.gov.uk/government/publications/rates-and-allowances-pension-schemes/pension-schemes-rates).
+- Carry forward applied in HMRC's order: the current year's allowance first, then unused allowance from the previous three years, oldest first.
+- Tapered annual allowance for years where you give your threshold and adjusted income.
+- Flags any contribution that goes over the allowance and carry forward, because the annual allowance charge applies to it.
 
-## How It Works
-1. **Inputs**:
-   - `latest_year`: The most recent tax year for which contributions are being calculated.
-   - `annual_allowances`: A list of annual allowances per year, ordered from oldest to newest.
-   - `contributions`: A list of contributions made per year, ordered from oldest to newest.
-2. The function iterates through contributions and deducts them from the respective year's allowance.
-3. If a year's contribution exceeds the available allowance, the script attempts to use unused allowances from the previous three tax years.
-4. The final remaining allowances are printed as output.
+### 2027/28 is an assumption
+HMRC hasn't published 2027/28 figures yet. The Autumn Budget on 28 October 2026 announced no change, so 2027/28 uses 2026/27's figures:
+- £60,000 annual allowance.
+- Tapering starts above £200,000 threshold income and £260,000 adjusted income, down to a minimum of £10,000.
 
-## Example Usage
-```python
-latest_year = 2025
-annual_allowances = [40000, 40000, 40000, 40000, 60000, 60000, 60000]  # Example allowances per year
-contributions = [0, 0, 0, 10000, 20000, 50000, 70000]  # Example contributions per year
+Output marks 2027/28 with `*`. When HMRC publishes the figures, update `RULES` in `src/calculateremainingannualpensionallowance/allowances.py` and `PUBLISHED_UP_TO`.
 
-remaining_allowance = calculate_remaining_allowance(latest_year, annual_allowances, contributions)
-print(f"Remaining Allowances: {remaining_allowance}")
-```
+## Usage
+Everything runs through Nix, so you don't need Python or Poetry installed.
 
-## Installation & Running with Poetry
-### Prerequisites
-Ensure you have Poetry installed. If not, install it using:
+1. Copy the example and fill in your figures. `contributions.toml` is gitignored, so your numbers stay out of this public repo.
+   ```sh
+   cp contributions.example.toml contributions.toml
+   ```
+2. Run it:
+   ```sh
+   nix run
+   ```
+
+`contribution` is the total paid into all your defined contribution pensions in the tax year: your own contributions grossed up for basic-rate relief, plus salary sacrifice and employer contributions. Give at least the three years before the target year. Earlier years help when a later year went over its own allowance, because carry forward uses the oldest unused allowance first. Without earlier years, the forecast assumes they had nothing unused, which is the cautious answer.
+
+To try other amounts without editing the file, use `--contribution YEAR=AMOUNT`. It overrides the file and can be repeated:
 ```sh
-pip install poetry
+nix run -- --contribution 2026=40000            # what if I pay £40k in 2026/27?
+nix run -- --contribution 2027=100000           # does a planned £100k in 2027/28 fit?
+nix run -- other.toml --target 2026             # a different file and target year
 ```
 
-### Running the Script
-1. Clone the repository or copy the script to a Python file (e.g., `pension_calculator.py`).
-2. Navigate to the script directory and create a Poetry environment:
-   ```sh
-   poetry install
-   ```
-3. Run the script using Poetry:
-   ```sh
-   poetry run python .\src\calculateremainingannualpensionallowance\__init__.py
-   ```
+Example output:
+```
+Tax year     Allowance     Paid in      Unused     Charged
+2023/24        £60,000     £15,000     £45,000          £0
+2024/25        £60,000     £20,000     £40,000          £0
+2025/26        £60,000     £30,000     £30,000          £0
+2026/27        £60,000     £25,000     £35,000          £0
+2027/28*       £60,000          £0     £60,000          £0
 
-## Future Improvements
-- Add user input functionality for dynamic calculations.
-- Implement logging for better debugging.
-- Error if we need earlier tax years to make a true determination of remaining allowances (if the first 3 tax years go over the annual allowance.)
+Available to pay in during 2027/28: £165,000
+  2027/28 allowance        £60,000
+  unused from 2024/25      £40,000
+  unused from 2025/26      £30,000
+  unused from 2026/27      £35,000
+
+* 2027/28: not yet published by HMRC, assumed unchanged from the latest published year.
+```
+
+### Things it doesn't check
+- You can only carry forward from a year in which you were a member of a registered pension scheme.
+- Once you've flexibly accessed a pension, the money purchase annual allowance (£10,000) limits defined contribution savings and you can't use carry forward for them. Set `allowance = 10000` for those years as a rough stand-in.
+- Tax relief on your own contributions is also limited to 100% of your relevant UK earnings in the year, whatever the allowance says.
+
+## Library use
+```python
+from calculateremainingannualpensionallowance import forecast
+from calculateremainingannualpensionallowance.allowances import annual_allowance
+
+years = range(2024, 2028)
+result = forecast(
+    {y: annual_allowance(y) for y in years},
+    {2024: 20000, 2025: 30000, 2026: 25000, 2027: 0},
+)
+print(result.available)  # 165000
+```
+
+## Development
+```sh
+nix develop --command pytest   # tests
+nix flake check                # builds the package and runs the tests inside the Nix build
+```
 
 ## License
 This script is provided under the MIT License.
-

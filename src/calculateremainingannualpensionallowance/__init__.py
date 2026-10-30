@@ -1,50 +1,89 @@
-def calculate_remaining_allowance(latest_year, annual_allowances, contributions):
+from dataclasses import dataclass
+
+CARRY_FORWARD_YEARS = 3
+
+
+def apply_contributions(annual_allowances, contributions):
     """
-    Calculates the remaining pension annual allowance in the UK.
+    Uses each year's contribution against the UK pension annual allowance.
 
-    :param annual_allowances: List of annual allowances for the last X years, ordered from oldest to newest.
-    :param contributions: List of contributions made in the last X years, ordered from oldest to newest.
-    :return: Remaining allowance after considering contributions and 3 previous tax year carry forward rules.
+    A contribution uses its own year's allowance first, then any unused allowance
+    from the previous three tax years, oldest first, per HMRC's carry forward rules.
+
+    :param annual_allowances: Annual allowance per year, ordered from oldest to newest.
+    :param contributions: Contribution per year, ordered from oldest to newest.
+    :return: (remaining, excess): the unused allowance left in each year, and the part of
+        each year's contribution that no allowance covered, which the annual allowance
+        charge applies to.
     """
-    remaining_allowances = annual_allowances[:]
+    remaining = list(annual_allowances)
+    excess = []
 
-    for year_index in range(len(contributions)):
-        year = latest_year - len(annual_allowances) + 1 + year_index
-        contribution_to_process = contributions[year_index]
+    for year_index, contribution in enumerate(contributions):
+        # The current year first, then previous tax years from oldest to newest.
+        for i in [year_index, *range(max(0, year_index - CARRY_FORWARD_YEARS), year_index)]:
+            used = min(contribution, remaining[i])
+            remaining[i] -= used
+            contribution -= used
+        excess.append(contribution)
 
-        if contribution_to_process <= remaining_allowances[year_index]:
-            remaining_allowances[year_index] -= contribution_to_process
-        else:
-            # TODO if first 3 elements in contributions are above annual allowance ask user for more data from previous years.
-            contribution_to_process -= remaining_allowances[year_index]
-            remaining_allowances[year_index] = 0
-            # Attempt to use previous tax years, from oldest to newest per HMRC guidelines.
-            for i in range(max(0, year_index-3), year_index):
-                if contribution_to_process <= remaining_allowances[i]:
-                    remaining_allowances[i] -= contribution_to_process
-                    break
-                else:
-                    contribution_to_process -= remaining_allowances[i]
-                    remaining_allowances[i] = 0
-
-    return remaining_allowances
+    return remaining, excess
 
 
-if __name__ == "__main__":
-    # Example usage
-    latest_year = 2025
-    annual_allowances = [40000, 40000, 40000, 40000, 60000, 60000, 60000]  # Example annual allowances per year
-    contributions = [0, 0, 0, 10000, 20000, 50000, 70000]  # Example contributions per year
+def calculate_remaining_allowance(annual_allowances, contributions):
+    """Unused annual allowance left in each year, ordered from oldest to newest."""
+    return apply_contributions(annual_allowances, contributions)[0]
 
 
-    remaining_allowance = calculate_remaining_allowance(latest_year, annual_allowances, contributions)
-    # Format the entire list (if you want to display all values)
-    print(f"Remaining Allowances: {[f'£{x:.2f}' for x in remaining_allowance]}")
-
-    # Format the last 4 elements of the list
-    print(f"Relevant allowances for latest tax year: {[f'£{x:.2f}' for x in remaining_allowance[-4:]]}")
-
-    # Sum the last 4 elements and format the result
-    print(f"Total allowances you can use for this tax year: £{sum(remaining_allowance[-4:]):.2f}")
+@dataclass(frozen=True)
+class YearResult:
+    year: int
+    allowance: float
+    contribution: float
+    unused: float
+    excess: float
 
 
+@dataclass(frozen=True)
+class Forecast:
+    target_year: int
+    years: list[YearResult]
+    # Unused allowance from each of the previous three years that the target year can use.
+    carry_forward: dict[int, float]
+    target_allowance: float
+
+    @property
+    def available(self):
+        """How much can be paid in during the target year before the annual allowance charge."""
+        return self.target_allowance + sum(self.carry_forward.values())
+
+
+def forecast(allowances, contributions):
+    """
+    Forecasts the annual allowance available in the latest year given.
+
+    :param allowances: Annual allowance by tax year (named by its starting year).
+    :param contributions: Contribution by tax year, for the same years as allowances.
+    """
+    years = sorted(allowances)
+    if sorted(contributions) != years:
+        raise ValueError("allowances and contributions must cover the same tax years")
+    if years != list(range(years[0], years[-1] + 1)):
+        raise ValueError("tax years must be consecutive")
+
+    target_year = years[-1]
+    allowance_list = [allowances[y] for y in years]
+    contribution_list = [contributions[y] for y in years]
+
+    # What the earlier years leave over, before the target year uses any of it.
+    remaining_before, _ = apply_contributions(allowance_list[:-1], contribution_list[:-1])
+    previous_years = years[:-1][-CARRY_FORWARD_YEARS:]
+    carry_forward = dict(zip(previous_years, remaining_before[-len(previous_years):]))
+
+    remaining, excess = apply_contributions(allowance_list, contribution_list)
+    return Forecast(
+        target_year=target_year,
+        years=[YearResult(*row) for row in zip(years, allowance_list, contribution_list, remaining, excess)],
+        carry_forward=carry_forward,
+        target_allowance=allowances[target_year],
+    )

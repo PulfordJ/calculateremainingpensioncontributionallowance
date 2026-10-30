@@ -1,0 +1,36 @@
+# Copy to contributions.toml (gitignored) and put your own figures in.
+#
+# Tax years are named by the year they start: [years.2026] is
+# 6 April 2026 to 5 April 2027.
+#
+# contribution is the total paid into all your defined contribution pensions
+# in the tax year: your own contributions grossed up for basic-rate relief,
+# plus salary sacrifice and employer contributions.
+
+# The tax year to forecast. Its contribution defaults to 0, which shows the
+# most you could pay in; give one to check a planned amount.
+target_year = 2027
+
+# Give at least the three years before the target. Earlier years help when a
+# later year went over its own allowance, because carry forward uses the
+# oldest unused allowance first.
+[years.2023]
+contribution = 15000
+
+[years.2024]
+contribution = 20000
+
+[years.2025]
+contribution = 30000
+
+[years.2026]
+contribution = 25000  # estimate: this tax year is still running
+
+# For a year where your threshold income may exceed £200,000, give both
+# incomes and the tapered allowance is worked out:
+#   threshold_income = 210000
+#   adjusted_income = 290000
+#
+# Or set the allowance outright, e.g. 10000 once the money purchase annual
+# allowance applies to you:
+#   allowance = 10000
