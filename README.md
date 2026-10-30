@@ -19,7 +19,7 @@ HMRC hasn't published 2027/28 figures yet. The Autumn Budget on 28 October 2026 
 Output marks 2027/28 with `*`. When HMRC publishes the figures, update `RULES` in `src/calculateremainingannualpensionallowance/allowances.py` and `PUBLISHED_UP_TO`.
 
 ## Usage
-Everything runs through Nix, so you don't need Python or Poetry installed.
+Everything runs through Nix, so you don't need Python or uv installed.
 
 1. Copy the example and fill in your figures. `contributions.toml` is gitignored, so your numbers stay out of this public repo.
    ```sh
@@ -76,9 +76,17 @@ print(result.available)  # 165000
 ```
 
 ## Development
+Dependencies are managed with uv and locked in `uv.lock`. The flake builds them into a virtual environment with [uv2nix](https://github.com/pyproject-nix/uv2nix).
+
 ```sh
-nix develop --command pytest   # tests
-nix flake check                # builds the package and runs the tests inside the Nix build
+nix develop                    # shell with the venv and uv
+pytest                         # tests, run against src/
+nix flake check                # runs the tests in the Nix sandbox
+```
+
+After changing dependencies in `pyproject.toml`, update the lock file:
+```sh
+nix develop .#bootstrap --command uv lock
 ```
 
 ## License

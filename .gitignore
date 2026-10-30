@@ -45,3 +45,6 @@ result-*
 
 # Personal contribution figures: keep them out of this public repo.
 contributions.toml
+
+# uv
+.venv/
